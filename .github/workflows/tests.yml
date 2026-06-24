@@ -1,0 +1,52 @@
+name: Selenium POM Test Suite
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1-5'   # Weekdays at 6 AM UTC
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Run tests (headless)
+        env:
+          BROWSER: chrome
+          HEADLESS: "true"
+          BASE_URL: https://www.saucedemo.com
+          STANDARD_USER: standard_user
+          LOCKED_USER: locked_out_user
+          PASSWORD: secret_sauce
+        run: pytest --alluredir=allure-results -v
+
+      - name: Upload Allure results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-results
+          path: allure-results/
+
+      - name: Upload HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: html-report
+          path: reports/
